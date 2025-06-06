@@ -1,48 +1,50 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import * as common from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UserRole } from './user.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole } from './user.entity';
 
-@Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@common.Controller('users')
+@common.UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
+  @common.Post()
   @Roles(UserRole.ADMIN)
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @common.HttpCode(common.HttpStatus.CREATED)
+  create(@common.Body() createUserDto: CreateUserDto, @common.Request() req) {
+    return this.usersService.create(createUserDto, req.user);
   }
 
-  @Get()
-  @Roles(UserRole.ADMIN, UserRole.MANAGER)
-  findAll(@Request() req) {
+  @common.Get()
+  @common.HttpCode(common.HttpStatus.OK)
+  findAll(@common.Request() req) {
     return this.usersService.findAll(req.user);
   }
 
-  @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.USER)
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  @common.Get(':id')
+  @common.HttpCode(common.HttpStatus.OK)
+  findOne(@common.Param('id') id: string, @common.Request() req) {
+    return this.usersService.findOne(+id, req.user);
   }
 
-  @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.USER)
+  @common.Patch(':id')
+  @common.HttpCode(common.HttpStatus.OK)
   update(
-    @Param('id') id: string, 
-    @Body() updateUserDto: UpdateUserDto,
-    @Request() req
+    @common.Param('id') id: string,
+    @common.Body() updateUserDto: UpdateUserDto,
+    @common.Request() req,
   ) {
     return this.usersService.update(+id, updateUserDto, req.user);
   }
 
-  @Delete(':id')
+  @common.Delete(':id')
   @Roles(UserRole.ADMIN)
-  remove(@Param('id') id: string, @Request() req) {
-    return this.usersService.remove(+id, req.user);
+  @common.HttpCode(common.HttpStatus.NO_CONTENT)
+  async remove(@common.Param('id') id: string, @common.Request() req) {
+    await this.usersService.remove(+id, req.user);
   }
 }

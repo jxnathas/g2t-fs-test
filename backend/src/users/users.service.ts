@@ -23,63 +23,82 @@ export class UsersService {
       throw new ConflictException('Email already in use');
     }
 
-    if (createUserDto.role && createUserDto.role !== UserRole.USER) {
-      if (!currentUser || currentUser.role !== UserRole.ADMIN) {
-        throw new ForbiddenException('Only admin can create users with elevated roles');
-      }
+    if (createUserDto.role && currentUser?.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Only admin can set user roles');
     }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     const user = this.usersRepository.create({
       ...createUserDto,
       password: hashedPassword,
+      role: createUserDto.role || UserRole.USER,
     });
 
     return this.usersRepository.save(user);
   }
 
   async findAll(currentUser: User): Promise<User[]> {
+
     if (currentUser.role === UserRole.ADMIN) {
       return this.usersRepository.find();
     }
-    
+
     if (currentUser.role === UserRole.MANAGER) {
       return this.usersRepository.find({
         select: ['id', 'name', 'email', 'role'],
       });
     }
 
-    return [await this.findOne(currentUser.id)];
+    const user = await this.usersRepository.findOne({
+      where: { id: currentUser.id },
+      select: ['id', 'name', 'email', 'role'],
+    });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${currentUser.id} not found`);
+    }
+    return [user];
   }
 
-  async findOne(id: number, currentUser?: User): Promise<User> {
-    const user = await this.usersRepository.findOne({ 
-      where: { id } 
-    });
-
+  async findOne(id: number, currentUser: User): Promise<User> {
+    const user = await this.usersRepository.findOne({ where: { id } });
+    
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    if (currentUser && currentUser.role !== UserRole.ADMIN && currentUser.id !== id) {
+    if (currentUser.role !== UserRole.ADMIN && currentUser.id !== id) {
       throw new ForbiddenException('You can only view your own profile');
     }
 
-    return user;
+    const { password, ...result } = user;
+    return result as User;
+  }
+
+  async findOneByEmail(email: string): Promise<User | undefined> {
+    const user = await this.usersRepository.findOne({ where: { email } });
+    return user ?? undefined;
   }
 
   async update(
-    id: number, 
-    updateUserDto: UpdateUserDto, 
-    currentUser: User
+    id: number,
+    updateUserDto: UpdateUserDto,
+    currentUser: User,
   ): Promise<User> {
-    const user = await this.findOne(id);
+    const user = await this.usersRepository.findOne({ where: { id } });
+    
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
 
     if (currentUser.role !== UserRole.ADMIN && currentUser.id !== id) {
       throw new ForbiddenException('You can only update your own profile');
     }
 
-    if (updateUserDto.role && currentUser.role !== UserRole.ADMIN) {
+    if (
+      updateUserDto.role &&
+      updateUserDto.role !== user.role &&
+      currentUser.role !== UserRole.ADMIN
+    ) {
       throw new ForbiddenException('Only admin can change user roles');
     }
 
@@ -88,19 +107,20 @@ export class UsersService {
     }
 
     if (updateUserDto.email && updateUserDto.email !== user.email) {
-      const emailExists = await this.usersRepository.findOne({ 
-        where: { email: updateUserDto.email } 
+      const emailExists = await this.usersRepository.findOne({
+        where: { email: updateUserDto.email },
       });
       if (emailExists) {
         throw new ConflictException('Email already in use');
       }
     }
 
-    return this.usersRepository.save({
-      ...user,
-      ...updateUserDto,
-      role: updateUserDto.role ? updateUserDto.role as UserRole : user.role,
-    });
+    await this.usersRepository.update(id, updateUserDto);
+    const updatedUser = await this.usersRepository.findOne({ where: { id } });
+    if (!updatedUser) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return updatedUser;
   }
 
   async remove(id: number, currentUser: User): Promise<void> {
@@ -109,19 +129,12 @@ export class UsersService {
     }
 
     if (currentUser.id === id) {
-      throw new ForbiddenException('You cannot delete your own account');
+      throw new ForbiddenException('You cannot delete yourself');
     }
 
     const result = await this.usersRepository.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
-  }
-
-  async findOneByEmail(email: string): Promise<User | null> {
-  return this.usersRepository.findOne({ 
-      where: { email },
-      select: ['id', 'name', 'email', 'password', 'role'],
-    });
   }
 }
