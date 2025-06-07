@@ -4,9 +4,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
 import Link from 'next/link';
+import Button from './ui/Button';
+import Input from './ui/Input';
 
 const registerSchema = z
   .object({

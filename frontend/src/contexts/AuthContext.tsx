@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { decode } from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import api from '@/lib/api';
 import { User, UserRole } from '@/types/auth';
 
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (token) {
         try {
-          const decoded: any = decode(token);
+          const decoded: any = jwtDecode(token);
           setUser({
             id: decoded.sub,
             name: decoded.name,
