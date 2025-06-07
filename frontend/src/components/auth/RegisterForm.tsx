@@ -5,8 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
-import Button from './ui/Button';
-import Input from './ui/Input';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
 import { UserRole } from '@/types/auth';
 
 const registerSchema = z
