@@ -23,15 +23,21 @@ export class UsersService {
       throw new ConflictException('Email already in use');
     }
 
-    if (createUserDto.role && currentUser?.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('Only admin can set user roles');
+    let roleToAssign = UserRole.USER;
+    
+    if (createUserDto.role && createUserDto.role !== UserRole.USER) {
+      if (currentUser?.role === UserRole.ADMIN) {
+        roleToAssign = createUserDto.role;
+      } else {
+        throw new ForbiddenException('Only admin can set user roles');
+      }
     }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     const user = this.usersRepository.create({
       ...createUserDto,
       password: hashedPassword,
-      role: createUserDto.role || UserRole.USER,
+      role: roleToAssign,
     });
 
     return this.usersRepository.save(user);

@@ -18,6 +18,8 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   loading: boolean;
+  abilities: any[];
+  updateAbilities: (abilities: any[]) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +27,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [abilities, setAbilities] = useState<any[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -53,10 +56,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async (email: string, password: string) => {
     try {
       const response = await api.post('/auth/login', { email, password });
-      const { access_token, user: userData } = response.data;
+      const { access_token, user: userData, abilities } = response.data;
       
       localStorage.setItem('access_token', access_token);
       setUser(userData);
+      setAbilities(abilities || []);
       router.push('/dashboard');
     } catch (error) {
       throw error;
@@ -82,6 +86,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     router.push('/login');
   };
 
+  const updateAbilities = (abilities: any[]) => {
+    setAbilities(abilities);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -91,6 +99,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         logout,
         isAuthenticated: !!user,
         loading,
+        abilities,
+        updateAbilities,
       }}
     >
       {children}
