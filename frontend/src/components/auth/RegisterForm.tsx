@@ -7,12 +7,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import Button from './ui/Button';
 import Input from './ui/Input';
+import { UserRole } from '@/types/auth';
 
 const registerSchema = z
   .object({
     name: z.string().min(3, 'Name must be at least 3 characters'),
     email: z.string().email('Invalid email address'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    password: z.string().min(3, 'Password must be at least 3 characters'),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -39,6 +40,7 @@ export default function RegisterForm() {
         name: data.name,
         email: data.email,
         password: data.password,
+        role: 'user'
       });
     } catch (error: any) {
       setError('root', {
@@ -100,7 +102,7 @@ export default function RegisterForm() {
         </Button>
       </div>
 
-      <div className="text-sm text-center">
+      <div className="text-sm text-center text-purple-800">
         Already have an account?{' '}
         <Link
           href="/login"

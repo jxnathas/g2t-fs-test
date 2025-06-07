@@ -9,7 +9,7 @@ import Input from './ui/Input';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().min(3, 'Password must be at least 3 characters'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;

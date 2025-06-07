@@ -13,6 +13,7 @@ interface AuthContextType {
     name: string;
     email: string;
     password: string;
+    role?: string;
   }) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
