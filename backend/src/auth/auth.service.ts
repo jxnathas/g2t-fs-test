@@ -25,24 +25,25 @@ export class AuthService {
   }
 
   async login(user: User) {
-    const ability = this.caslAbilityFactory.createForUser(user);
-    const payload = { 
-      email: user.email, 
-      sub: user.id, 
+  const ability = this.caslAbilityFactory.createForUser(user);
+  
+  const payload = {
+    sub: user.id,
+    email: user.email,
+    role: user.role,
+    abilities: ability.rules,
+  };
+
+  return {
+    access_token: this.jwtService.sign(payload),
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
       role: user.role,
-      permissions: ability.rules
-    };
-    
-    return {
-      access_token: this.jwtService.sign(payload),
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-    };
-  }
+    },
+  };
+}
   async register(createUserDto: CreateUserDto): Promise<User> {
     return this.usersService.create(createUserDto, undefined);
   }
