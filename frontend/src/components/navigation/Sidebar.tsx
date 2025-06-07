@@ -7,7 +7,7 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
 
   return (
-    <div className="w-64 bg-white shadow-md">
+    <div className="w-64 shadow-md bg-grey-800">
       <div className="p-4 border-b">
         <h1 className="text-xl font-semibold">User Management</h1>
         <p className="text-sm text-gray-500">{user?.email}</p>
@@ -18,7 +18,7 @@ export default function Sidebar() {
           <li>
             <Link
               href="/dashboard"
-              className="block px-4 py-2 rounded hover:bg-gray-100"
+              className="block px-4 py-2 rounded hover:bg-gray-300"
             >
               Dashboard
             </Link>
