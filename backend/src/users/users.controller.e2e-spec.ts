@@ -32,7 +32,6 @@ describe('UsersController (e2e)', () => {
     userRepository = moduleFixture.get<Repository<User>>(getRepositoryToken(User));
     jwtService = moduleFixture.get<JwtService>(JwtService);
 
-    // Create admin user
     const admin = await userRepository.save({
       name: 'Admin',
       email: 'admin@example.com',
@@ -77,4 +76,5 @@ describe('UsersController (e2e)', () => {
         .expect(403);
     });
   });
+
 });

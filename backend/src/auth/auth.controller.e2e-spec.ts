@@ -6,14 +6,13 @@ import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { AppModule } from '../app.module';
-import { User, UserRole } from './user.entity';
+import { AppModule } from 'src/app.module';
+import { User, UserRole } from 'src/users/user.entity';
 
-describe('UsersController (e2e)', () => {
+describe('AuthController (e2e)', () => {
   let app: INestApplication;
   let userRepository: Repository<User>;
   let jwtService: JwtService;
-  let adminToken: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -32,49 +31,36 @@ describe('UsersController (e2e)', () => {
     userRepository = moduleFixture.get<Repository<User>>(getRepositoryToken(User));
     jwtService = moduleFixture.get<JwtService>(JwtService);
 
-    // Create admin user
-    const admin = await userRepository.save({
-      name: 'Admin',
-      email: 'admin@example.com',
-      password: await bcrypt.hash('admin123', 10),
-      role: UserRole.ADMIN,
-    } as User);
-
-    adminToken = jwtService.sign({
-      email: admin.email,
-      sub: admin.id,
-      role: admin.role,
-    });
-
     await app.init();
   });
 
-  describe('/users (GET)', () => {
-    it('should return 200 for admin', async () => {
-      await request(app.getHttpServer())
-        .get('/users')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200);
-    });
+  afterAll(async () => {
+    await app.close();
+  });
 
-    it('should return 403 for non-admin', async () => {
+  describe('/auth/login (POST)', () => {
+    it('should return JWT token when login is successful', async () => {
+      const password = 'password';
       const user = await userRepository.save({
-        name: 'Regular User',
-        email: 'user@example.com',
-        password: await bcrypt.hash('password', 10),
+        name: 'Test User',
+        email: 'test@example.com',
+        password: await bcrypt.hash(password, 10),
         role: UserRole.USER,
-      } as User);
-
-      const userToken = jwtService.sign({
-        email: user.email,
-        sub: user.id,
-        role: user.role,
       });
 
+      const response = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({ email: user.email, password })
+        .expect(200);
+
+      expect(response.body).toHaveProperty('access_token');
+    });
+
+    it('should return 401 when credentials are invalid', async () => {
       await request(app.getHttpServer())
-        .get('/users')
-        .set('Authorization', `Bearer ${userToken}`)
-        .expect(403);
+        .post('/auth/login')
+        .send({ email: 'wrong@example.com', password: 'wrong' })
+        .expect(401);
     });
   });
 });
